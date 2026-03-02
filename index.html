@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Label Lens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --border: #2a2d3a;
+            --accent: #6ee7b7;
+            --accent-dim: #1a3a2e;
+            --text: #e2e8f0;
+            --muted: #64748b;
+            --user-bg: #1e293b;
+        }
+
+        body {
+            font-family: "DM Sans", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 1120px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        #header {
+            padding: 0.85rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .header-main {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .view-pill {
+            margin-left: auto;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 0.28rem 0.58rem;
+            font-family: "DM Mono", monospace;
+            font-size: 0.62rem;
+            color: var(--muted);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .logo {
+            width: 30px;
+            height: 30px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        #header h1 {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        #header p {
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        /* Messages */
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+            min-height: 0;
+        }
+
+        /* Welcome */
+        .welcome {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--muted);
+        }
+
+        .welcome h2 {
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 0.4rem;
+        }
+
+        .welcome p {
+            font-size: 0.82rem;
+            line-height: 1.6;
+            max-width: 400px;
+            margin: 0 auto 1rem;
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            justify-content: center;
+        }
+
+        .chip {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.72rem;
+            color: var(--muted);
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+        .chip:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* User message */
+        .msg-user {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.2rem;
+        }
+
+        .msg-label {
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            font-family: "DM Mono", monospace;
+        }
+
+        .user-bubble {
+            background: var(--user-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px 12px 2px 12px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            max-width: 55%;
+        }
+
+        /* KEY FIX: image must be block with explicit dimensions */
+        .user-bubble .label-img {
+            display: block;
+            width: 100%;
+            max-width: 280px;
+            height: auto;
+            max-height: 220px;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #111;
+            margin-bottom: 0.45rem;
+        }
+
+        .user-bubble .label-fallback {
+            display: inline-block;
+            font-size: 0.68rem;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 0.2rem 0.55rem;
+            margin-bottom: 0.45rem;
+            font-family: "DM Mono", monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .user-bubble .user-text {
+            white-space: pre-wrap;
+        }
+
+        /* Bot message */
+        .msg-bot {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .bot-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            /* Prevent overflow */
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .bot-analysis {
+            flex: 1;
+            min-width: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 2px 12px 12px 12px;
+            padding: 0.8rem 1rem;
+            font-family: "DM Mono", monospace;
+            font-size: 0.8rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+        }
+
+        .bot-analysis.loading {
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .bot-analysis strong {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .label-panel {
+            width: 86px;
+            min-width: 86px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .label-panel .label-thumb {
+            width: 86px;
+            height: 86px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: block;
+            background: #111;
+        }
+
+        .label-panel .label-tag {
+            font-size: 0.55rem;
+            color: var(--muted);
+            font-family: "DM Mono", monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .label-panel.is-fallback {
+            width: auto;
+            min-width: 0;
+            padding: 0.2rem 0.45rem;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--surface);
+        }
+
+        .label-panel.is-fallback .label-tag {
+            color: var(--text);
+            font-size: 0.62rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* GIF panel — fixed width, never overflows */
+        .gif-panel {
+            width: 220px;
+            min-width: 220px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .gif-panel .gif-img {
+            width: 220px;
+            /* height: auto; */
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            display: block;
+            /* Prevent broken-image icon */
+            background: var(--surface);
+        }
+
+        .gif-caption {
+            font-size: 0.65rem;
+            color: var(--accent);
+            font-family: "DM Mono", monospace;
+            text-align: center;
+        }
+
+        .gif-query {
+            font-size: 0.58rem;
+            color: var(--muted);
+            font-family: "DM Mono", monospace;
+            text-align: center;
+            word-break: break-word;
+            width: 100%;
+        }
+
+        @media (max-width: 700px) {
+            .bot-row {
+                flex-direction: column;
+            }
+
+            .gif-panel {
+                width: 100%;
+                min-width: unset;
+            }
+
+            .label-panel {
+                width: 100%;
+                min-width: unset;
+                align-items: flex-start;
+            }
+
+            .label-panel .label-thumb {
+                width: 96px;
+                height: 96px;
+            }
+
+            .gif-panel .gif-img {
+                width: 100%;
+                /* height: auto; */
+            }
+
+            .user-bubble {
+                max-width: 85%;
+            }
+        }
+
+        /* Input area */
+        #input-area {
+            padding: 0.6rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        /* Preview bar */
+        #preview-bar {
+            display: none;
+            /* shown via JS: previewBar.style.display = "flex" */
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+        }
+
+        #preview-thumb {
+            width: 72px;
+            height: 72px;
+            object-fit: cover;
+            object-position: center;
+            border-radius: 6px;
+            border: 1px solid var(--accent);
+            flex-shrink: 0;
+            display: block;
+            background: #111;
+        }
+
+        .preview-meta {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            min-width: 0;
+        }
+
+        .preview-meta .fname {
+            font-size: 0.74rem;
+            color: var(--accent);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: "DM Mono", monospace;
+        }
+
+        .preview-meta .fsize {
+            font-size: 0.67rem;
+            color: var(--muted);
+        }
+
+        .preview-meta .fready {
+            font-size: 0.67rem;
+            color: var(--accent);
+        }
+
+        #remove-btn {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        #input-row {
+            display: flex;
+            gap: 0.6rem;
+            align-items: flex-end;
+        }
+
+        #attach-btn {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted);
+            padding: 0;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+        #attach-btn:hover,
+        #attach-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #user-input {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.65rem 0.9rem;
+            color: var(--text);
+            font-family: "DM Sans", sans-serif;
+            font-size: 0.875rem;
+            resize: none;
+            outline: none;
+            min-height: 44px;
+            max-height: 120px;
+            line-height: 1.5;
+            transition: border-color 0.15s;
+        }
+
+        #user-input:focus {
+            border-color: var(--accent);
+        }
+
+        #user-input::placeholder {
+            color: var(--muted);
+        }
+
+        #send-btn {
+            height: 44px;
+            flex-shrink: 0;
+            padding: 0 1.25rem;
+            background: var(--accent);
+            color: #0f1117;
+            border: none;
+            border-radius: 10px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        #send-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .disclaimer {
+            text-align: center;
+            font-size: 0.67rem;
+            color: var(--muted);
+            padding: 0 1rem 0.5rem;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div id="header">
+            <div class="logo">🔬</div>
+            <div class="header-main">
+                <h1>Label Lens</h1>
+                <p>Ingredient evidence &amp; label literacy — no hype</p>
+            </div>
+            <div id="view-counter" class="view-pill">Views: --</div>
+        </div>
+
+        <div id="messages">
+            <div class="welcome">
+                <h2>What's actually in your supplements?</h2>
+                <p>Type a question or 📎 attach a photo of the tub. Analysis on the left, vibes on the
+                    right.</p>
+                <div class="chips">
+                    <span class="chip" onclick="fillInput('Does creatine actually work?')">Does creatine actually
+                        work?</span>
+                    <span class="chip" onclick="fillInput('What does proprietary blend mean?')">Proprietary blend — what
+                        is it?</span>
+                    <span class="chip" onclick="fillInput('Is ashwagandha legit?')">Is ashwagandha legit?</span>
+                    <span class="chip" onclick="fillInput('Are BCAAs worth it?')">Are BCAAs worth it?</span>
+                    <span class="chip" onclick="fillInput('What does clinically studied mean on a label?')">"Clinically
+                        studied" — real or BS?</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="input-area">
+            <div id="preview-bar">
+                <img id="preview-thumb" src="" alt="preview" />
+                <div class="preview-meta">
+                    <span class="fname" id="preview-fname"></span>
+                    <span class="fsize" id="preview-fsize"></span>
+                    <span class="fready">✓ Ready to analyze</span>
+                </div>
+                <button id="remove-btn" title="Remove">✕</button>
+            </div>
+            <div id="input-row">
+                <input type="file" id="file-input" accept="image/*" />
+                <button id="attach-btn" title="Attach label photo">📎</button>
+                <textarea id="user-input" rows="1"
+                    placeholder="Ask about a supplement or attach a photo of its label"></textarea>
+                <button id="send-btn">Decode</button>
+            </div>
+        </div>
+        <div class="disclaimer">Not medical advice. Consult a doctor for health conditions or drug interactions.</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    <script>
+        const messagesEl = document.getElementById("messages");
+        const userInput = document.getElementById("user-input");
+        const sendBtn = document.getElementById("send-btn");
+        const fileInput = document.getElementById("file-input");
+        const attachBtn = document.getElementById("attach-btn");
+        const previewBar = document.getElementById("preview-bar");
+        const previewThumb = document.getElementById("preview-thumb");
+        const previewFname = document.getElementById("preview-fname");
+        const previewFsize = document.getElementById("preview-fsize");
+        const removeBtn = document.getElementById("remove-btn");
+        const viewCounterEl = document.getElementById("view-counter");
+
+        let sessionId = null;
+        let welcomeShown = true;
+        let pending = null;
+        const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8 MB
+
+        async function refreshViewCounter() {
+            try {
+                const res = await fetch("/stats", { cache: "no-store" });
+                if (!res.ok) throw new Error("stats fetch failed");
+                const data = await res.json();
+                const views = Number(data.views);
+                const safeViews = Number.isFinite(views) ? Math.max(0, Math.floor(views)) : 0;
+                viewCounterEl.textContent = "Views: " + safeViews.toLocaleString();
+            } catch (err) {
+                viewCounterEl.textContent = "Views: --";
+            }
+        }
+
+        // ── File attach ─────────────────────────────────────────────
+        attachBtn.addEventListener("click", function () {
+            fileInput.click();
+            refreshViewCounter();
+        });
+
+        function fileToDataUrl(file) {
+            return new Promise(function (resolve, reject) {
+                const reader = new FileReader();
+                reader.onload = function (evt) { resolve(evt.target.result); };
+                reader.onerror = function () { reject(new Error("FileReader error")); };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function maybeConvertHeic(file) {
+            const type = (file.type || "").toLowerCase();
+            const name = (file.name || "").toLowerCase();
+            const isHeic = type.includes("heic") || type.includes("heif") || /\.(heic|heif)$/.test(name);
+            if (!isHeic) return { file, converted: false };
+
+            if (typeof heic2any !== "function") {
+                console.warn("HEIC converter unavailable");
+                return { file, converted: false };
+            }
+
+            try {
+                const convertedBlobAny = await heic2any({
+                    blob: file,
+                    toType: "image/jpeg",
+                    quality: 0.9
+                });
+                const convertedBlob = Array.isArray(convertedBlobAny) ? convertedBlobAny[0] : convertedBlobAny;
+                const newName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+                const convertedFile = new File([convertedBlob], newName, { type: "image/jpeg" });
+                return { file: convertedFile, converted: true };
+            } catch (err) {
+                console.error("HEIC conversion failed", err);
+                return { file, converted: false };
+            }
+        }
+
+        fileInput.addEventListener("change", async function () {
+            const selectedFile = fileInput.files[0];
+            if (!selectedFile) return;
+            if (selectedFile.size > MAX_FILE_BYTES) {
+                alert("Please upload an image under 8 MB.");
+                fileInput.value = "";
+                return;
+            }
+
+            try {
+                const prep = await maybeConvertHeic(selectedFile);
+                const file = prep.file;
+                if (file.size > MAX_FILE_BYTES) {
+                    alert("Converted image is over 8 MB. Please use a smaller image.");
+                    fileInput.value = "";
+                    return;
+                }
+                const dataUrl = await fileToDataUrl(file);
+                pending = {
+                    base64: dataUrl.split(",")[1],
+                    mediaType: file.type || "image/jpeg",
+                    dataUrl: dataUrl,
+                    name: file.name,
+                    size: (file.size / 1024).toFixed(0) + " KB"
+                };
+
+                // Update preview bar
+                previewFname.textContent = prep.converted ? file.name + " (converted)" : file.name;
+                previewFsize.textContent = pending.size;
+
+                // Set thumb src AFTER the element is already in DOM
+                previewThumb.onload = null;
+                previewThumb.onerror = function () {
+                    console.error("Preview thumb failed to load");
+                };
+                previewThumb.src = dataUrl;
+
+                // Show the bar
+                previewBar.style.display = "flex";
+                attachBtn.classList.add("active");
+                refreshViewCounter();
+            } catch (err) {
+                console.error("Image preparation failed", err);
+            }
+
+            fileInput.value = "";
+        });
+
+        removeBtn.addEventListener("click", function () {
+            clearPending();
+            refreshViewCounter();
+        });
+
+        function clearPending() {
+            pending = null;
+            previewBar.style.display = "none";
+            previewThumb.src = "";
+            attachBtn.classList.remove("active");
+        }
+
+        // Drag-and-drop
+        document.getElementById("input-area").addEventListener("dragover", function (e) { e.preventDefault(); });
+        document.getElementById("input-area").addEventListener("drop", function (e) {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith("image/")) {
+                if (file.size > MAX_FILE_BYTES) {
+                    alert("Please upload an image under 8 MB.");
+                    return;
+                }
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                fileInput.files = dt.files;
+                fileInput.dispatchEvent(new Event("change"));
+                refreshViewCounter();
+            }
+        });
+
+        // ── Helpers ─────────────────────────────────────────────────
+        function fillInput(t) { userInput.value = t; userInput.focus(); }
+
+        function md(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                .replace(/__(.*?)__/g, "<strong>$1</strong>");
+        }
+
+        function dismissWelcome() {
+            if (!welcomeShown) return;
+            const w = document.querySelector(".welcome");
+            if (w) w.remove();
+            welcomeShown = false;
+        }
+
+        // ── User bubble ──────────────────────────────────────────────
+        function addUser(text, dataUrl) {
+            dismissWelcome();
+
+            const wrap = document.createElement("div"); wrap.className = "msg-user";
+            const lbl = document.createElement("div"); lbl.className = "msg-label"; lbl.textContent = "you";
+            const bubble = document.createElement("div"); bubble.className = "user-bubble";
+
+            if (dataUrl) {
+                const img = document.createElement("img");
+                img.className = "label-img";
+                img.alt = "uploaded label";
+                img.onerror = function () {
+                    const fallback = document.createElement("div");
+                    fallback.className = "label-fallback";
+                    fallback.textContent = "label attached";
+                    if (bubble.contains(img)) bubble.replaceChild(fallback, img);
+                };
+                // Append first, THEN set src — avoids race condition
+                bubble.appendChild(img);
+                img.src = dataUrl;
+            }
+            if (text) {
+                const t = document.createElement("div");
+                t.className = "user-text";
+                t.textContent = text;
+                bubble.appendChild(t);
+            }
+
+            wrap.appendChild(lbl);
+            wrap.appendChild(bubble);
+            messagesEl.appendChild(wrap);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        // ── Bot message ──────────────────────────────────────────────
+        function addBot(analysisText, gifUrl, gifQuery, isLoading) {
+            dismissWelcome();
+
+            const wrap = document.createElement("div"); wrap.className = "msg-bot";
+            const lbl = document.createElement("div"); lbl.className = "msg-label"; lbl.textContent = "Label Lens";
+            const row = document.createElement("div"); row.className = "bot-row";
+            const analysis = document.createElement("div");
+            analysis.className = "bot-analysis" + (isLoading ? " loading" : "");
+
+            if (isLoading) {
+                analysis.textContent = analysisText;
+            } else {
+                analysis.innerHTML = md(analysisText);
+            }
+            row.appendChild(analysis);
+
+            if (gifUrl) row.appendChild(makeGifPanel(gifUrl, gifQuery));
+
+            wrap.appendChild(lbl);
+            wrap.appendChild(row);
+            messagesEl.appendChild(wrap);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return { wrap, analysis, row };
+        }
+
+        function makeLabelPanel(labelUrl) {
+            const panel = document.createElement("div"); panel.className = "label-panel";
+            const img = document.createElement("img");
+            img.className = "label-thumb";
+            img.alt = "label preview";
+            const tag = document.createElement("div");
+            tag.className = "label-tag";
+            tag.textContent = "label";
+
+            img.onerror = function () {
+                panel.classList.add("is-fallback");
+                if (panel.contains(img)) panel.removeChild(img);
+                tag.textContent = "label attached";
+            };
+
+            panel.appendChild(img);
+            img.src = labelUrl;
+            panel.appendChild(tag);
+            return panel;
+        }
+
+        function makeGifPanel(gifUrl, gifQuery) {
+            const panel = document.createElement("div"); panel.className = "gif-panel";
+            const img = document.createElement("img");
+            img.className = "gif-img";
+            img.alt = "reaction gif";
+            img.onerror = function () { panel.style.display = "none"; }; // hide if GIF fails
+            panel.appendChild(img);
+            img.src = gifUrl; // set after append
+
+            const cap = document.createElement("div"); cap.className = "gif-caption"; cap.textContent = "🎉 vibes only";
+            const query = document.createElement("div"); query.className = "gif-query"; query.textContent = "🔍 " + (gifQuery || "");
+            panel.appendChild(cap);
+            panel.appendChild(query);
+            return panel;
+        }
+
+        // ── Auto-resize ──────────────────────────────────────────────
+        userInput.addEventListener("input", function () {
+            this.style.height = "auto";
+            this.style.height = Math.min(this.scrollHeight, 120) + "px";
+        });
+
+        // ── Send ─────────────────────────────────────────────────────
+        async function send() {
+            const text = userInput.value.trim();
+            if (!text && !pending) return;
+
+            const snap = pending;
+            const displayText = text || "Please analyze this supplement label.";
+
+            userInput.value = "";
+            userInput.style.height = "auto";
+            sendBtn.disabled = true;
+            clearPending();
+
+            addUser(text, snap ? snap.dataUrl : null);
+            const { wrap, analysis, row } = addBot("Analyzing...", null, null, true);
+            if (snap && snap.dataUrl) {
+                row.insertBefore(makeLabelPanel(snap.dataUrl), analysis);
+            }
+
+            try {
+                const payload = { message: displayText, session_id: sessionId };
+                if (snap) {
+                    payload.image_base64 = snap.base64;
+                    payload.image_media_type = snap.mediaType;
+                }
+                const res = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                sessionId = data.session_id;
+
+                analysis.innerHTML = md(data.response);
+                analysis.classList.remove("loading");
+
+                if (data.gif_url) {
+                    row.appendChild(makeGifPanel(data.gif_url, data.giphy_query));
+                }
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            } catch (e) {
+                analysis.textContent = "Error: " + e.message;
+                analysis.classList.remove("loading");
+            }
+            refreshViewCounter();
+            sendBtn.disabled = false;
+            userInput.focus();
+        }
+
+        sendBtn.addEventListener("click", send);
+        userInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+        });
+        refreshViewCounter();
+        userInput.focus();
+    </script>
+</body>
+
+</html>
