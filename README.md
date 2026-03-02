@@ -174,6 +174,32 @@ uv run pytest evals/test_deterministic.py -v -s
 
 > MaaJ evals make live LLM calls and incur API costs. Deterministic evals are nearly free.
 
+### Step-by-step test run order (before push)
+
+Run all commands from the project root:
+ 
+1. Sync dependencies:
+   ```bash
+   uv sync
+   ```
+2. Run deterministic evals first (fast, no judge model):
+   ```bash
+   uv run pytest evals/test_deterministic.py -v -s
+   ```
+3. Run golden MaaJ evals:
+   ```bash
+   uv run pytest evals/test_golden.py -v -s
+   ```
+4. Run rubric MaaJ evals:
+   ```bash
+   uv run pytest evals/test_rubric.py -v -s
+   ```
+5. Final full-suite check:
+   ```bash
+   uv run pytest evals/ -v -s
+   ```
+  
+
 ---
 
 ## Eval dataset summary
@@ -322,3 +348,6 @@ gcloud run services describe label-lens \
 - **Python pre-backstop:** `classify_message()` routes out-of-scope categories before normal analysis
 - **Python post-backstop:** `apply_post_backstop()` overrides unsafe medical-style output if it slips through
 - **Manual adversarial prompt bank:** `jailbreak_prompt_testing.md` for reproducible jailbreak checks
+
+## Result
+![alt text](result.png)

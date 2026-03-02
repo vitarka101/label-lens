@@ -179,7 +179,7 @@ FEW_SHOT_EXAMPLES = [
 # --- Safety backstop ---
 
 DISTRESS_PATTERNS = re.compile(
-    r"\b(kill myself|suicide|end my life|self.?harm|hurt myself|don't want to live|"
+    r"\b(kill myself|suicide|end my life|self.?harm(?:ing|ed)?|hurt myself|don't want to live|"
     r"want to die|eating disorder|starving myself|stop eating|purging)\b",
     re.IGNORECASE,
 )
@@ -590,22 +590,55 @@ def chat(request: ChatRequest):
         response_text = generate_response(
             build_fallback_messages(user_text, SAFETY_FALLBACK_PROMPT)
         )
-        return ChatResponse(response=response_text, session_id=session_id)
+        giphy_query = summarize_giphy_query(user_text, response_text)
+        gif_url = fetch_giphy(giphy_query)
+        print(f"[CHAT] gif_url={gif_url!r}")
+        return ChatResponse(
+            response=response_text,
+            session_id=session_id,
+            gif_url=gif_url,
+            giphy_query=giphy_query,
+        )
 
     if classification == "medical":
-        return ChatResponse(response=MEDICAL_REDIRECT_TEXT, session_id=session_id)
+        response_text = MEDICAL_REDIRECT_TEXT
+        giphy_query = summarize_giphy_query(user_text, response_text)
+        gif_url = fetch_giphy(giphy_query)
+        print(f"[CHAT] gif_url={gif_url!r}")
+        return ChatResponse(
+            response=response_text,
+            session_id=session_id,
+            gif_url=gif_url,
+            giphy_query=giphy_query,
+        )
 
     if classification == "nutrition_or_diet":
         response_text = generate_response(
             build_fallback_messages(user_text, NUTRITION_REDIRECT_PROMPT)
         )
-        return ChatResponse(response=response_text, session_id=session_id)
+        giphy_query = summarize_giphy_query(user_text, response_text)
+        gif_url = fetch_giphy(giphy_query)
+        print(f"[CHAT] gif_url={gif_url!r}")
+        return ChatResponse(
+            response=response_text,
+            session_id=session_id,
+            gif_url=gif_url,
+            giphy_query=giphy_query,
+        )
 
     if classification == "shopping_or_pricing":
         response_text = generate_response(
             build_fallback_messages(user_text, SHOPPING_REDIRECT_PROMPT)
         )
-        return ChatResponse(response=response_text, session_id=session_id)
+        giphy_query = summarize_giphy_query(user_text, response_text)
+        gif_url = fetch_giphy(giphy_query)
+        print(f"[CHAT] gif_url={gif_url!r}")
+        return ChatResponse(
+            response=response_text,
+            session_id=session_id,
+            gif_url=gif_url,
+            giphy_query=giphy_query,
+        )
 
     if session_id not in sessions:
         sessions[session_id] = build_initial_messages()
