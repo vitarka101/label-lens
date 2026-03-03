@@ -18,14 +18,14 @@ Type a question, paste a label, or photograph a supplement tub. Label Lens:
 
 **Image input:** Click 📎 or drag-and-drop a photo. The LLM reads the label from the image directly. The UI shows upload preview + chat-row label preview (with fallback if browser rendering fails), and the right panel shows the matching tacky GIF vibe. You can then ask follow-up questions in the same session as plain text.
 
-Out of scope: medical diagnoses/interactions, general diet planning, and shopping/pricing recommendations. A Python pre-backstop routes these categories before main analysis, and a light post-backstop filters unsafe medical-style output.
+Out of scope: medical diagnoses/interactions, general diet planning, shopping/pricing recommendations, and prompt/policy exfiltration attempts. A Python pre-backstop routes these categories before main analysis, and a post-backstop filters unsafe medical-style output plus prompt/policy leakage.
 
 ---
 
 ## Request flow
 
 1. User sends text (optional image attached) to `/chat`.
-2. Python **pre-backstop** classifies the message (`distress`, `medical`, `nutrition_or_diet`, `shopping_or_pricing`, `non_supplement`, `ok`).
+2. Python **pre-backstop** classifies the message (`distress`, `prompt_exfiltration`, `medical`, `nutrition_or_diet`, `shopping_or_pricing`, `non_supplement`, `ok`).
 3. If out-of-scope, app returns a category-specific redirect response and stops normal analysis.
 4. If `ok`, app runs normal supplement analysis with the main LLM prompt.
 5. Python **post-backstop** checks the generated output and overrides unsafe medical-style advice if detected.
@@ -133,8 +133,9 @@ Open [http://localhost:8000](http://localhost:8000).
 - **Preview fallback:** if browser cannot render preview image, UI shows `label attached`
 - **Error handling:** internal LLM exceptions are logged server-side; users receive a generic retry message
 - **Auth by default on deploy:** Cloud Run deploy config uses `--no-allow-unauthenticated`
-- **Pre-backstop categories:** `distress`, `medical`, `nutrition_or_diet`, `shopping_or_pricing`, `non_supplement`
-- **Post-backstop:** overrides unsafe medical-style output with a safe medical redirect
+- **Pre-backstop categories:** `distress`, `prompt_exfiltration`, `medical`, `nutrition_or_diet`, `shopping_or_pricing`, `non_supplement`
+- **Prompt-exfiltration route:** requests for hidden prompts/policies/tools are blocked with a fixed refusal response
+- **Post-backstop:** overrides unsafe medical-style output with a safe medical redirect, and blocks prompt/policy leakage if it slips through
 - **GIF query behavior:** generated from a short main-ingredient summary (2-3 words), then searched on Giphy
 - **Visitor counter in UI:** shows unique visitors seen by this running app instance (cookie + in-memory counter)
 
@@ -345,8 +346,9 @@ gcloud run services describe label-lens \
 - **Escape hatch:** "The evidence is limited — check Examine.com or PubMed"
 - **Out-of-scope routing categories (pre-backstop):** Distress, medical, nutrition/diet planning, shopping/pricing, generic non-supplement queries
 - **Jailbreak-aware medical routing:** catches instruction-override patterns, lab/biomarker protocol prompts, and routes them to medical refusal
+- **Prompt-exfiltration routing:** catches attempts to reveal hidden prompts, policies, or tool schemas
 - **Python pre-backstop:** `classify_message()` routes out-of-scope categories before normal analysis
-- **Python post-backstop:** `apply_post_backstop()` overrides unsafe medical-style output if it slips through
+- **Python post-backstop:** `apply_post_backstop()` overrides unsafe medical-style output and prompt/policy leakage if it slips through
 - **Manual adversarial prompt bank:** `jailbreak_prompt_testing.md` for reproducible jailbreak checks
 
 ## Result
